@@ -40,24 +40,22 @@ export default function TasksTab({ d, open, setOpen, toggle, addTask, editTask, 
     <>
       <h2
         style={{
-          fontFamily: "'Playfair Display',serif",
-          fontSize: 26,
-          fontStyle: "italic",
+          fontSize: 28,
           fontWeight: 700,
-          padding: "4px 4px 14px",
+          letterSpacing: -0.5,
+          padding: "4px 4px 16px",
         }}
       >
         Tasks
       </h2>
 
-      {/* Add Task Card */}
+      {/* Add Task */}
       <div
         style={{
           background: WHITE,
-          borderRadius: 14,
-          padding: "14px 16px",
+          borderRadius: 12,
+          padding: "12px 16px",
           marginBottom: 16,
-          boxShadow: "0 1px 2px rgba(0,0,0,.03)",
         }}
       >
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -68,26 +66,27 @@ export default function TasksTab({ d, open, setOpen, toggle, addTask, editTask, 
             placeholder="Add a task or idea..."
             style={{
               flex: 1,
-              border: `1px solid ${WARM}`,
-              borderRadius: 8,
-              padding: "10px 12px",
-              fontSize: 13,
+              border: "none",
+              borderBottom: `1px solid ${WARM}`,
+              borderRadius: 0,
+              padding: "8px 0",
+              fontSize: 14,
               fontFamily: "'DM Sans',sans-serif",
               outline: "none",
-              background: CREAM,
+              background: "transparent",
               color: NAVY,
             }}
           />
           <button
             onClick={handleAdd}
             style={{
-              width: 38,
-              height: 38,
-              borderRadius: 10,
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
               border: "none",
               background: ACCENT,
               color: WHITE,
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: 300,
               cursor: "pointer",
               display: "flex",
@@ -106,8 +105,6 @@ export default function TasksTab({ d, open, setOpen, toggle, addTask, editTask, 
             alignItems: "center",
             gap: 12,
             marginTop: 10,
-            paddingTop: 10,
-            borderTop: `1px solid ${CREAM}`,
           }}
         >
           <select
@@ -115,7 +112,7 @@ export default function TasksTab({ d, open, setOpen, toggle, addTask, editTask, 
             onChange={(e) => setNewTrack(e.target.value)}
             style={{
               flex: 1,
-              border: `1px solid ${WARM}`,
+              border: "none",
               borderRadius: 6,
               padding: "6px 8px",
               fontSize: 12,
@@ -128,26 +125,25 @@ export default function TasksTab({ d, open, setOpen, toggle, addTask, editTask, 
           >
             {trackEntries.map(([k, v]) => (
               <option key={k} value={k}>
-                {v.icon} {v.label}
+                {v.label}
               </option>
             ))}
           </select>
 
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <span style={{ fontSize: 11, color: SUBTLE }}>Priority:</span>
             {["green", "yellow", "red"].map((p) => (
               <div
                 key={p}
                 onClick={() => setNewPriority(p)}
                 style={{
-                  width: 18,
-                  height: 18,
+                  width: 16,
+                  height: 16,
                   borderRadius: "50%",
                   background: PC[p],
                   cursor: "pointer",
-                  border: newPriority === p ? `2px solid ${NAVY}` : "2px solid transparent",
-                  opacity: newPriority === p ? 1 : 0.4,
-                  transition: "all .15s",
+                  opacity: newPriority === p ? 1 : 0.25,
+                  transition: "opacity .15s",
+                  border: newPriority === p ? `2px solid ${NAVY}20` : "2px solid transparent",
                 }}
               />
             ))}
@@ -171,16 +167,12 @@ export default function TasksTab({ d, open, setOpen, toggle, addTask, editTask, 
                 alignItems: "center",
                 background: WHITE,
                 border: "none",
-                borderRadius: isOpen ? "14px 14px 0 0" : 14,
+                borderRadius: isOpen ? "12px 12px 0 0" : 12,
                 cursor: "pointer",
                 fontFamily: "'DM Sans',sans-serif",
-                boxShadow: "0 1px 2px rgba(0,0,0,.03)",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ color: SUBTLE }}>{v.icon}</span>
-                <span style={{ fontSize: 14, fontWeight: 600 }}>{v.label}</span>
-              </div>
+              <span style={{ fontSize: 14, fontWeight: 600, color: NAVY }}>{v.label}</span>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span
                   style={{
@@ -193,13 +185,13 @@ export default function TasksTab({ d, open, setOpen, toggle, addTask, editTask, 
                 </span>
                 <span
                   style={{
-                    fontSize: 18,
+                    fontSize: 14,
                     color: SUBTLE,
                     transition: "transform .2s",
-                    transform: isOpen ? "rotate(180deg)" : "",
+                    transform: isOpen ? "rotate(90deg)" : "",
                   }}
                 >
-                  ⌄
+                  ›
                 </span>
               </div>
             </button>
@@ -207,28 +199,26 @@ export default function TasksTab({ d, open, setOpen, toggle, addTask, editTask, 
               <div
                 style={{
                   background: WHITE,
-                  borderRadius: "0 0 14px 14px",
-                  boxShadow: "0 1px 2px rgba(0,0,0,.03)",
+                  borderRadius: "0 0 12px 12px",
                 }}
               >
                 {v.items.length === 0 && (
                   <div
                     style={{
                       padding: "20px 16px",
-                      fontSize: 12,
+                      fontSize: 13,
                       color: SUBTLE,
                       textAlign: "center",
-                      fontStyle: "italic",
                     }}
                   >
-                    No tasks yet — add one above
+                    No tasks yet
                   </div>
                 )}
                 {v.items.map((t) => {
                   const noteOpen = open[`note-${t.id}`];
                   const isEditing = editingId === t.id;
                   return (
-                    <div key={t.id} style={{ borderTop: `1px solid ${CREAM}` }}>
+                    <div key={t.id} style={{ borderTop: `0.5px solid ${WARM}` }}>
                       <div
                         style={{
                           display: "flex",
@@ -240,17 +230,17 @@ export default function TasksTab({ d, open, setOpen, toggle, addTask, editTask, 
                         <div
                           onClick={() => toggle(k, t.id)}
                           style={{
-                            width: 22,
-                            height: 22,
+                            width: 20,
+                            height: 20,
                             borderRadius: "50%",
                             flexShrink: 0,
                             cursor: "pointer",
-                            border: `2px solid ${t.done ? GREEN : PC[t.p] + "60"}`,
+                            border: `1.5px solid ${t.done ? GREEN : WARM}`,
                             background: t.done ? GREEN : "transparent",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontSize: 11,
+                            fontSize: 10,
                             color: "#fff",
                             transition: "all .2s",
                           }}
@@ -278,13 +268,14 @@ export default function TasksTab({ d, open, setOpen, toggle, addTask, editTask, 
                               autoFocus
                               style={{
                                 width: "100%",
-                                border: `1px solid ${ACCENT}`,
-                                borderRadius: 6,
-                                padding: "6px 8px",
+                                border: "none",
+                                borderBottom: `1px solid ${ACCENT}`,
+                                borderRadius: 0,
+                                padding: "4px 0",
                                 fontSize: 13,
                                 fontFamily: "'DM Sans',sans-serif",
                                 outline: "none",
-                                background: CREAM,
+                                background: "transparent",
                                 color: NAVY,
                               }}
                             />
@@ -295,6 +286,9 @@ export default function TasksTab({ d, open, setOpen, toggle, addTask, editTask, 
                                 fontWeight: 500,
                                 color: t.done ? SUBTLE : NAVY,
                                 textDecoration: t.done ? "line-through" : "none",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
                               }}
                             >
                               {t.text}
@@ -303,48 +297,30 @@ export default function TasksTab({ d, open, setOpen, toggle, addTask, editTask, 
                                   e.stopPropagation();
                                   cyclePriority(k, t);
                                 }}
-                                title="Tap to change priority"
                                 style={{
                                   display: "inline-block",
-                                  width: 7,
-                                  height: 7,
+                                  width: 6,
+                                  height: 6,
                                   borderRadius: "50%",
                                   background: PC[t.p],
-                                  marginLeft: 6,
-                                  verticalAlign: "middle",
                                   cursor: "pointer",
+                                  flexShrink: 0,
                                 }}
                               />
                             </div>
                           )}
                         </div>
-                        {!isEditing && (
-                          <span
-                            onClick={() =>
-                              setOpen((p) => ({ ...p, [`note-${t.id}`]: !noteOpen }))
-                            }
-                            style={{
-                              fontSize: 16,
-                              color: SUBTLE,
-                              cursor: "pointer",
-                              transform: noteOpen ? "rotate(180deg)" : "",
-                              transition: "transform .2s",
-                            }}
-                          >
-                            ⌄
-                          </span>
-                        )}
                       </div>
                       {noteOpen && (
-                        <div style={{ padding: "0 16px 12px 48px" }}>
+                        <div style={{ padding: "0 16px 12px 46px" }}>
                           {t.note && (
                             <div
                               style={{
                                 fontSize: 12,
                                 color: SUBTLE,
-                                lineHeight: 1.5,
+                                lineHeight: 1.6,
                                 whiteSpace: "pre-line",
-                                marginBottom: 8,
+                                marginBottom: 10,
                               }}
                             >
                               {t.note}
@@ -355,10 +331,10 @@ export default function TasksTab({ d, open, setOpen, toggle, addTask, editTask, 
                               onClick={() => startEdit(t)}
                               style={{
                                 fontSize: 11,
-                                padding: "4px 10px",
+                                padding: "4px 12px",
                                 borderRadius: 6,
                                 border: `1px solid ${WARM}`,
-                                background: CREAM,
+                                background: "transparent",
                                 color: NAVY,
                                 cursor: "pointer",
                                 fontFamily: "'DM Sans',sans-serif",
@@ -370,10 +346,10 @@ export default function TasksTab({ d, open, setOpen, toggle, addTask, editTask, 
                               onClick={() => deleteTask(k, t.id)}
                               style={{
                                 fontSize: 11,
-                                padding: "4px 10px",
+                                padding: "4px 12px",
                                 borderRadius: 6,
-                                border: `1px solid ${RED}30`,
-                                background: `${RED}10`,
+                                border: "none",
+                                background: `${RED}12`,
                                 color: RED,
                                 cursor: "pointer",
                                 fontFamily: "'DM Sans',sans-serif",
