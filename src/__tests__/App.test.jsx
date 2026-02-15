@@ -30,7 +30,7 @@ describe("App", () => {
 
   it("shows done/total count", () => {
     render(<App />);
-    expect(screen.getByText("0/42 completed")).toBeInTheDocument();
+    expect(screen.getByText("0/57 completed")).toBeInTheDocument();
   });
 
   it("defaults to home tab", () => {
