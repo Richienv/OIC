@@ -1,9 +1,9 @@
-import { NAVY, SUBTLE, WHITE, CREAM } from "../constants";
+import { NAVY, SUBTLE, WHITE, WARM } from "../constants";
 
 export default function Sec({ id, title, badge, defaultOpen, open, setOpen, children }) {
   const isOpen = open[id] ?? defaultOpen;
   return (
-    <div style={{ marginBottom: 8 }}>
+    <div style={{ marginBottom: 10 }}>
       <button
         onClick={() => setOpen((p) => ({ ...p, [id]: !isOpen }))}
         style={{
@@ -14,10 +14,9 @@ export default function Sec({ id, title, badge, defaultOpen, open, setOpen, chil
           alignItems: "center",
           background: WHITE,
           border: "none",
-          borderRadius: isOpen ? "14px 14px 0 0" : 14,
+          borderRadius: isOpen ? "12px 12px 0 0" : 12,
           cursor: "pointer",
           fontFamily: "'DM Sans',sans-serif",
-          boxShadow: "0 1px 2px rgba(0,0,0,.03)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -27,9 +26,6 @@ export default function Sec({ id, title, badge, defaultOpen, open, setOpen, chil
               style={{
                 fontSize: 11,
                 fontFamily: "'DM Mono',monospace",
-                background: `${NAVY}0A`,
-                padding: "2px 8px",
-                borderRadius: 8,
                 color: SUBTLE,
               }}
             >
@@ -39,22 +35,21 @@ export default function Sec({ id, title, badge, defaultOpen, open, setOpen, chil
         </div>
         <span
           style={{
-            fontSize: 18,
+            fontSize: 14,
             color: SUBTLE,
             transition: "transform .2s",
-            transform: isOpen ? "rotate(180deg)" : "",
+            transform: isOpen ? "rotate(90deg)" : "",
           }}
         >
-          ⌄
+          ›
         </span>
       </button>
       {isOpen && (
         <div
           style={{
             background: WHITE,
-            borderRadius: "0 0 14px 14px",
+            borderRadius: "0 0 12px 12px",
             padding: "4px 0 8px",
-            boxShadow: "0 1px 2px rgba(0,0,0,.03)",
           }}
         >
           {children}

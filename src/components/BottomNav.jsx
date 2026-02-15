@@ -1,11 +1,11 @@
-import { CREAM, NAVY, SUBTLE, WARM } from "../constants";
+import { NAVY, SUBTLE, ACCENT, WHITE, WARM } from "../constants";
 
 const TABS = [
-  { id: "home", icon: "◉", label: "Home" },
-  { id: "tasks", icon: "☐", label: "Tasks" },
-  { id: "arch", icon: "⬡", label: "Arch" },
-  { id: "memory", icon: "◈", label: "Memory" },
-  { id: "brand", icon: "◎", label: "Brand" },
+  { id: "home", label: "Home" },
+  { id: "tasks", label: "Tasks" },
+  { id: "arch", label: "Arch" },
+  { id: "memory", label: "Memory" },
+  { id: "brand", label: "Brand" },
 ];
 
 export default function BottomNav({ tab, setTab }) {
@@ -16,38 +16,57 @@ export default function BottomNav({ tab, setTab }) {
         bottom: 0,
         left: 0,
         right: 0,
-        background: `${CREAM}F0`,
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-        borderTop: `1px solid ${WARM}80`,
+        background: `${WHITE}F2`,
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        borderTop: `0.5px solid ${WARM}`,
         display: "flex",
         justifyContent: "space-around",
-        padding: "8px 0 env(safe-area-inset-bottom, 8px)",
+        padding: "10px 0 env(safe-area-inset-bottom, 10px)",
       }}
     >
-      {TABS.map((n) => (
-        <button
-          key={n.id}
-          onClick={() => setTab(n.id)}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: "6px 16px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 2,
-            color: tab === n.id ? NAVY : SUBTLE,
-            fontFamily: "'DM Sans',sans-serif",
-            transition: "color .2s",
-            WebkitTapHighlightColor: "transparent",
-          }}
-        >
-          <span style={{ fontSize: 18 }}>{n.icon}</span>
-          <span style={{ fontSize: 10, fontWeight: tab === n.id ? 600 : 400 }}>{n.label}</span>
-        </button>
-      ))}
+      {TABS.map((n) => {
+        const active = tab === n.id;
+        return (
+          <button
+            key={n.id}
+            onClick={() => setTab(n.id)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "4px 16px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 4,
+              fontFamily: "'DM Sans',sans-serif",
+              WebkitTapHighlightColor: "transparent",
+            }}
+          >
+            <div
+              style={{
+                width: 4,
+                height: 4,
+                borderRadius: 2,
+                background: active ? ACCENT : "transparent",
+                transition: "background .2s",
+              }}
+            />
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: active ? 600 : 400,
+                color: active ? NAVY : SUBTLE,
+                transition: "color .2s",
+                letterSpacing: 0.2,
+              }}
+            >
+              {n.label}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }

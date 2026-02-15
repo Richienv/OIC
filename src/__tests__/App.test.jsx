@@ -24,26 +24,26 @@ describe("App", () => {
 
   it("shows the progress percentage", () => {
     render(<App />);
-    expect(screen.getByText("0%")).toBeInTheDocument();
+    // Percentage is split: "0" in one element, "%" in a span
+    expect(screen.getByText((_, el) => el?.textContent === "0%")).toBeInTheDocument();
   });
 
   it("shows done/total count", () => {
     render(<App />);
-    expect(screen.getByText("0/42 done")).toBeInTheDocument();
+    expect(screen.getByText("0/42 completed")).toBeInTheDocument();
   });
 
   it("defaults to home tab", () => {
     render(<App />);
-    // Home tab shows milestones and critical tasks sections
-    expect(screen.getByText(/🎯 Milestones/)).toBeInTheDocument();
-    expect(screen.getByText(/Do First/)).toBeInTheDocument();
+    expect(screen.getByText("Do First")).toBeInTheDocument();
+    expect(screen.getByText("All Tracks")).toBeInTheDocument();
   });
 
   it("switches to tasks tab on click", async () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByText("Tasks"));
-    expect(screen.getByText("Brand & Identity")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Add a task or idea...")).toBeInTheDocument();
   });
 
   it("switches to architecture tab on click", async () => {

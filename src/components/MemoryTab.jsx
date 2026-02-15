@@ -1,43 +1,64 @@
-import { NAVY, SUBTLE, WHITE, WARM, ACCENT, CC, CL } from "../constants";
+import { NAVY, SUBTLE, WHITE, WARM, ACCENT, CREAM, CC, CL } from "../constants";
 
 export default function MemoryTab({ d, memOpen, setMemOpen, memCat, setMemCat, search, setSearch, filteredMem }) {
   return (
     <>
       <h2
         style={{
-          fontFamily: "'Playfair Display',serif",
-          fontSize: 26,
-          fontStyle: "italic",
+          fontSize: 28,
           fontWeight: 700,
-          padding: "4px 4px 8px",
+          letterSpacing: -0.5,
+          padding: "4px 4px 12px",
         }}
       >
         Memory
       </h2>
-      <input
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search..."
+
+      {/* Search */}
+      <div
         style={{
-          width: "100%",
-          padding: "10px 14px",
           background: WHITE,
-          border: `1px solid ${WARM}`,
-          borderRadius: 12,
-          fontSize: 13,
-          color: NAVY,
-          outline: "none",
-          marginBottom: 10,
+          borderRadius: 10,
+          padding: "10px 14px",
+          marginBottom: 12,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
         }}
-      />
+      >
+        <span style={{ color: SUBTLE, fontSize: 14 }}>&#x2315;</span>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search..."
+          style={{
+            flex: 1,
+            border: "none",
+            fontSize: 14,
+            color: NAVY,
+            outline: "none",
+            background: "transparent",
+            fontFamily: "'DM Sans',sans-serif",
+          }}
+        />
+        {search && (
+          <span
+            onClick={() => setSearch("")}
+            style={{ color: SUBTLE, cursor: "pointer", fontSize: 14 }}
+          >
+            ×
+          </span>
+        )}
+      </div>
+
+      {/* Category Filters */}
       <div
         style={{
           display: "flex",
           gap: 6,
-          flexWrap: "wrap",
-          marginBottom: 12,
+          marginBottom: 14,
           overflowX: "auto",
-          paddingBottom: 4,
+          paddingBottom: 2,
         }}
       >
         {["all", ...Object.keys(CL)].map((k) => {
@@ -54,11 +75,12 @@ export default function MemoryTab({ d, memOpen, setMemOpen, memCat, setMemCat, s
                 fontSize: 11,
                 fontWeight: 500,
                 cursor: "pointer",
-                border: `1.5px solid ${active ? (k === "all" ? NAVY : CC[k]) : WARM}`,
-                background: active ? (k === "all" ? NAVY : CC[k]) : "transparent",
+                border: "none",
+                background: active ? NAVY : CREAM,
                 color: active ? "#fff" : SUBTLE,
                 fontFamily: "'DM Sans',sans-serif",
                 whiteSpace: "nowrap",
+                transition: "all .15s",
               }}
             >
               {k === "all" ? "All" : CL[k]} {cnt}
@@ -67,6 +89,7 @@ export default function MemoryTab({ d, memOpen, setMemOpen, memCat, setMemCat, s
         })}
       </div>
 
+      {/* Memory Items */}
       {filteredMem.map((m) => {
         const isO = memOpen[m.id];
         return (
@@ -84,24 +107,28 @@ export default function MemoryTab({ d, memOpen, setMemOpen, memCat, setMemCat, s
                 borderRadius: isO ? "12px 12px 0 0" : 12,
                 cursor: "pointer",
                 fontFamily: "'DM Sans',sans-serif",
-                boxShadow: "0 1px 2px rgba(0,0,0,.03)",
-                borderLeft: `3px solid ${CC[m.cat]}`,
               }}
             >
               <span style={{ fontSize: 13, fontWeight: 600, color: NAVY, textAlign: "left" }}>{m.title}</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 9, color: CC[m.cat], fontFamily: "'DM Mono',monospace", letterSpacing: 1 }}>
-                  {CL[m.cat]?.toUpperCase()}
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: SUBTLE,
+                    fontFamily: "'DM Mono',monospace",
+                  }}
+                >
+                  {CL[m.cat]}
                 </span>
                 <span
                   style={{
-                    fontSize: 16,
+                    fontSize: 14,
                     color: SUBTLE,
-                    transform: isO ? "rotate(180deg)" : "",
+                    transform: isO ? "rotate(90deg)" : "",
                     transition: "transform .2s",
                   }}
                 >
-                  ⌄
+                  ›
                 </span>
               </div>
             </button>
@@ -111,18 +138,16 @@ export default function MemoryTab({ d, memOpen, setMemOpen, memCat, setMemCat, s
                   background: WHITE,
                   borderRadius: "0 0 12px 12px",
                   padding: "10px 16px 14px",
-                  boxShadow: "0 1px 2px rgba(0,0,0,.03)",
-                  borderLeft: `3px solid ${CC[m.cat]}`,
                 }}
               >
-                <p style={{ fontSize: 13, color: "#6B6155", lineHeight: 1.6, whiteSpace: "pre-line" }}>{m.text}</p>
+                <p style={{ fontSize: 13, color: SUBTLE, lineHeight: 1.7, whiteSpace: "pre-line" }}>{m.text}</p>
               </div>
             )}
           </div>
         );
       })}
       {filteredMem.length === 0 && (
-        <div style={{ padding: 40, textAlign: "center", color: SUBTLE, fontStyle: "italic" }}>No results</div>
+        <div style={{ padding: 40, textAlign: "center", color: SUBTLE }}>No results</div>
       )}
     </>
   );
