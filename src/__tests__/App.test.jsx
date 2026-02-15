@@ -50,7 +50,7 @@ describe("App", () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByText("Arch"));
-    expect(screen.getByText("Architecture")).toBeInTheDocument();
+    expect(screen.getByText("How It Works")).toBeInTheDocument();
   });
 
   it("switches to memory tab on click", async () => {
