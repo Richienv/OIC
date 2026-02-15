@@ -30,7 +30,7 @@ describe("App", () => {
 
   it("shows done/total count", () => {
     render(<App />);
-    expect(screen.getByText("0/42 completed")).toBeInTheDocument();
+    expect(screen.getByText("0/57 completed")).toBeInTheDocument();
   });
 
   it("defaults to home tab", () => {
@@ -50,7 +50,7 @@ describe("App", () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByText("Arch"));
-    expect(screen.getByText("Architecture")).toBeInTheDocument();
+    expect(screen.getByText("How It Works")).toBeInTheDocument();
   });
 
   it("switches to memory tab on click", async () => {

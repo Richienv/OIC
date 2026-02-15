@@ -30,9 +30,9 @@ describe("getDefault", () => {
       expect(tracks).toEqual(["brand", "digital", "tech", "content", "hardware", "sales", "ideas"]);
     });
 
-    it("has 42 tasks total", () => {
+    it("has 57 tasks total", () => {
       const total = Object.values(data.todos).reduce((sum, t) => sum + t.items.length, 0);
-      expect(total).toBe(42);
+      expect(total).toBe(57);
     });
 
     it("all task IDs are unique", () => {
