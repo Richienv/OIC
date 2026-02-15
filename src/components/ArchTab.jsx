@@ -61,6 +61,185 @@ const Item = ({ label, value, sub }) => (
   </div>
 );
 
+const SkillBadge = ({ label, color = ACCENT }) => (
+  <span style={{
+    display: "inline-block", fontSize: 10, fontFamily: "'DM Mono',monospace", fontWeight: 600,
+    color, background: `${color}10`, border: `1px solid ${color}25`,
+    borderRadius: 6, padding: "2px 8px", marginRight: 4, marginBottom: 4,
+  }}>{label}</span>
+);
+
+const RecipeStep = ({ n, text, tool }) => (
+  <div style={{ display: "flex", gap: 8, padding: "5px 0", borderBottom: `0.5px solid ${WARM}` }}>
+    <span style={{ fontSize: 11, fontFamily: "'DM Mono',monospace", color: SUBTLE, minWidth: 20, textAlign: "right", flexShrink: 0 }}>{n}.</span>
+    <div style={{ flex: 1, fontSize: 12, color: NAVY, lineHeight: 1.6 }}>
+      {text}
+      {tool && <>{" "}<SkillBadge label={tool} color={GREEN} /></>}
+    </div>
+  </div>
+);
+
+const FallbackItem = ({ condition, action }) => (
+  <div style={{ display: "flex", gap: 8, padding: "6px 0", borderBottom: `0.5px solid ${WARM}` }}>
+    <span style={{ fontSize: 11, color: RED, fontWeight: 600, flexShrink: 0 }}>IF</span>
+    <div style={{ flex: 1 }}>
+      <span style={{ fontSize: 11, color: NAVY, fontWeight: 500 }}>{condition}</span>
+      <span style={{ fontSize: 11, color: SUBTLE }}> → {action}</span>
+    </div>
+  </div>
+);
+
+/* ─── Skill instruction data ─── */
+
+const SKILLS = [
+  {
+    id: "browse", name: "/browse", label: "Core Browser Skill", icon: "🌐", color: YELLOW,
+    trigger: "Any skill that needs web interaction calls /browse as a sub-tool",
+    tools: ["/playwright", "/session-mgr"],
+    steps: [
+      { n: 1, text: "Receive target URL and action from parent skill" },
+      { n: 2, text: "Check if active Playwright session exists for this domain", tool: "/session-mgr" },
+      { n: 3, text: "If no session → launch new Chromium context with saved cookies" },
+      { n: 4, text: "Navigate to URL. Wait for page load (networkidle)", tool: "/playwright" },
+      { n: 5, text: "Take screenshot of loaded page", tool: "/vision" },
+      { n: 6, text: "Send screenshot to vision model: 'describe what you see on this page'" },
+      { n: 7, text: "Parse vision response to confirm correct page loaded" },
+      { n: 8, text: "Execute action sequence from parent skill (click, type, scroll)", tool: "/playwright" },
+      { n: 9, text: "After each action → screenshot + verify state changed", tool: "/vision" },
+      { n: 10, text: "Return final page state + screenshot to parent skill" },
+    ],
+    fallbacks: [
+      { condition: "Page timeout (>15s)", action: "Retry once. If still fails, screenshot + send to admin." },
+      { condition: "Login wall detected", action: "Load saved credentials from vault. Re-login. Resume." },
+      { condition: "CAPTCHA detected", action: "Screenshot CAPTCHA → send to admin via WhatsApp. Wait for manual solve." },
+      { condition: "Element not found", action: "Full-page screenshot → visual element search via /vision. If not found, escalate." },
+    ],
+  },
+  {
+    id: "vision", name: "/vision", label: "Camera & Screenshot Analysis", icon: "👁️", color: "#AF52DE",
+    trigger: 'User says "lihat ini", "analisa foto", or any skill needs to read a screen/image',
+    tools: ["/kimi-k2.5", "/camera", "/screenshot"],
+    steps: [
+      { n: 1, text: "Receive image source: camera capture OR browser screenshot OR user-sent photo" },
+      { n: 2, text: "If camera: activate robot camera, capture frame at highest resolution", tool: "/camera" },
+      { n: 3, text: "If browser: call Playwright page.screenshot({ fullPage: true })", tool: "/playwright" },
+      { n: 4, text: "Resize image to max 2048px width (preserve aspect ratio)" },
+      { n: 5, text: "Send to Kimi K2.5 vision model with context prompt from parent skill", tool: "/kimi-k2.5" },
+      { n: 6, text: "Kimi returns structured description: text found, UI elements, prices, data" },
+      { n: 7, text: "Parse response into structured data (JSON) for parent skill to use" },
+      { n: 8, text: "Return parsed data + confidence score to caller" },
+    ],
+    fallbacks: [
+      { condition: "Image too dark/blurry", action: "Ask user to retake. 'Foto kurang jelas, bisa foto ulang?'" },
+      { condition: "Vision model timeout", action: "Retry with compressed image. If fails, use fallback OCR." },
+      { condition: "Low confidence (<70%)", action: "Return with warning flag. Parent skill decides to retry or ask user." },
+    ],
+  },
+  {
+    id: "shop", name: "/shop", label: "Shop on Tokopedia", icon: "🛒", color: "#FF6B00",
+    trigger: 'User says "beli", "belikan", "order dari Tokopedia/Shopee"',
+    tools: ["/browse", "/vision", "/wallet", "/whatsapp"],
+    steps: [
+      { n: 1, text: "Extract: product name, platform (Tokopedia/Shopee), criteria (cheapest/best rated/official)" },
+      { n: 2, text: "Call /browse → open tokopedia.com or shopee.co.id", tool: "/browse" },
+      { n: 3, text: "Find search bar via /vision. Type product name. Press Enter.", tool: "/vision" },
+      { n: 4, text: "Wait for results to load. Screenshot results page.", tool: "/vision" },
+      { n: 5, text: "Parse results: product name, price, rating, seller type, shipping cost" },
+      { n: 6, text: "Filter by criteria. Prefer Official Store. Pick top 3." },
+      { n: 7, text: "Format options with price + rating + seller. Send to user.", tool: "/whatsapp" },
+      { n: 8, text: "Wait for user to pick (1, 2, or 3)" },
+      { n: 9, text: "PERMISSION GATE: Show product + price + wallet balance. Ask OK/NO.", tool: "/wallet" },
+      { n: 10, text: "If OK → click product → click 'Beli Langsung' or '+ Keranjang'", tool: "/browse" },
+      { n: 11, text: "Verify shipping address (pre-saved). Apply available vouchers." },
+      { n: 12, text: "Select payment method: OIC Wallet / linked e-wallet." },
+      { n: 13, text: "Complete checkout. Screenshot order confirmation.", tool: "/vision" },
+      { n: 14, text: "Send confirmation screenshot + order number + delivery ETA.", tool: "/whatsapp" },
+      { n: 15, text: "Log transaction. Set reminder to check delivery status in 2 days." },
+    ],
+    fallbacks: [
+      { condition: "Product out of stock", action: "Notify user. Suggest similar alternatives from results." },
+      { condition: "Address not set", action: "Ask user for delivery address via WhatsApp. Save for next time." },
+      { condition: "Payment failed", action: "Screenshot error. Check wallet balance. Notify user with reason." },
+      { condition: "Voucher popup blocks flow", action: "Close popup via /vision element detection. Continue." },
+    ],
+  },
+  {
+    id: "book-flight", name: "/book-flight", label: "Book Flight on Traveloka", icon: "✈️", color: ACCENT,
+    trigger: 'User says "book flight", "cari tiket", "pesan pesawat"',
+    tools: ["/browse", "/vision", "/wallet", "/whatsapp"],
+    steps: [
+      { n: 1, text: "Extract: destination, date, class, budget, passenger count" },
+      { n: 2, text: "Call /browse → open traveloka.com", tool: "/browse" },
+      { n: 3, text: "Find search form — look for 'Dari mana?' input via /vision", tool: "/vision" },
+      { n: 4, text: "Type origin city → wait for dropdown → select matching city", tool: "/browse" },
+      { n: 5, text: "Type destination city → wait for dropdown → select", tool: "/browse" },
+      { n: 6, text: "Click date picker → navigate to correct month → click target date" },
+      { n: 7, text: "Set passenger count + class. Click 'Cari Penerbangan'.", tool: "/browse" },
+      { n: 8, text: "Wait for results to load (look for flight cards appearing)" },
+      { n: 9, text: "Screenshot results page", tool: "/vision" },
+      { n: 10, text: "Parse results: airline, departure time, price, duration, stops" },
+      { n: 11, text: "Sort by user criteria (cheapest/fastest). Pick top 3." },
+      { n: 12, text: "Format as numbered list. Send to user.", tool: "/whatsapp" },
+      { n: 13, text: "Wait for user reply (1, 2, or 3)" },
+      { n: 14, text: "PERMISSION GATE: Show flight price + wallet balance. Ask OK/NO.", tool: "/wallet" },
+      { n: 15, text: "If OK → click selected flight → fill passenger details from saved profile", tool: "/browse" },
+      { n: 16, text: "Navigate to payment → select OIC Wallet payment method" },
+      { n: 17, text: "Screenshot confirmation page. Send to user.", tool: "/vision" },
+      { n: 18, text: "Log transaction: flight details, amount, timestamp, confirmation #" },
+    ],
+    fallbacks: [
+      { condition: "Page layout changed (redesign)", action: "Screenshot + send to admin. Try adaptive nav via /vision." },
+      { condition: "Login session expired", action: "Re-login with saved credentials. Resume from last step." },
+      { condition: "Price changed during booking", action: "Notify user of new price. Re-ask permission." },
+      { condition: "Flight sold out", action: "Inform user. Re-search and offer next best options." },
+    ],
+  },
+  {
+    id: "create-invoice", name: "/create-invoice", label: "Create Invoice PDF", icon: "🧾", color: "#AF52DE",
+    trigger: 'User says "buat invoice", "create invoice", "faktur untuk..."',
+    tools: ["/pdf-gen", "/print", "/whatsapp"],
+    steps: [
+      { n: 1, text: "Extract: vendor/client name, line items (qty, desc, price), due date, notes" },
+      { n: 2, text: "Look up client in server DB. If new → save client details for next time." },
+      { n: 3, text: "Auto-generate invoice #: INV-{YEAR}-{SEQ} (e.g. INV-2026-048)" },
+      { n: 4, text: "Load invoice template from server (company logo, bank details, footer)" },
+      { n: 5, text: "Populate template: header, line items, subtotal, tax, grand total", tool: "/pdf-gen" },
+      { n: 6, text: "Render to PDF using server-side generator (Puppeteer/wkhtmltopdf)", tool: "/pdf-gen" },
+      { n: 7, text: "Send preview to user: 'Invoice #INV-2026-048, Total Rp X'", tool: "/whatsapp" },
+      { n: 8, text: "Ask: 'Kirim ke siapa? WhatsApp / Email / Print / Semua?'" },
+      { n: 9, text: "If WhatsApp → send PDF as attachment to specified number", tool: "/whatsapp" },
+      { n: 10, text: "If Print → send to network printer via CUPS", tool: "/print" },
+      { n: 11, text: "If Email → open email via /browse, compose, attach, send", tool: "/browse" },
+      { n: 12, text: "Save invoice to server DB. Update invoice sequence counter." },
+      { n: 13, text: "Log to accounting ledger: date, invoice #, amount, client, status=unpaid" },
+    ],
+    fallbacks: [
+      { condition: "Missing required fields", action: "Ask user for missing info via WhatsApp. Don't generate partial." },
+      { condition: "Printer offline", action: "Notify: 'Printer tidak tersambung.' Offer WhatsApp/email instead." },
+      { condition: "PDF generation fails", action: "Retry once. If fails, send plain text summary + log error." },
+    ],
+  },
+  {
+    id: "print", name: "/print", label: "Network Print", icon: "🖨️", color: NAVY,
+    trigger: 'User says "print", "cetak", or any skill with print delivery',
+    tools: ["/cups", "/pdf-gen"],
+    steps: [
+      { n: 1, text: "Receive document: PDF file path or URL from parent skill" },
+      { n: 2, text: "Check printer status via CUPS API: online? paper loaded?", tool: "/cups" },
+      { n: 3, text: "If printer offline → notify user immediately. Abort." },
+      { n: 4, text: "Set print options: paper size (A4), orientation, copies, color/BW" },
+      { n: 5, text: "Submit print job to CUPS queue", tool: "/cups" },
+      { n: 6, text: "Monitor job status: queued → printing → completed" },
+      { n: 7, text: "Confirm: 'Dokumen sudah dicetak. 1 halaman.'", tool: "/whatsapp" },
+    ],
+    fallbacks: [
+      { condition: "Paper jam", action: "Notify: 'Printer macet. Mohon cek printer.' Wait and retry." },
+      { condition: "CUPS service down", action: "Restart CUPS service. If fails, escalate to admin." },
+      { condition: "Wrong paper size", action: "Auto-scale to fit. Notify user of scaling." },
+    ],
+  },
+];
+
 export default function ArchTab({ open, setOpen }) {
   return (
     <>
@@ -614,6 +793,328 @@ export default function ArchTab({ open, setOpen }) {
             <div style={{ fontSize: 12, color: SUBTLE, lineHeight: 1.7 }}>
               Anyone can make a chatbot that answers questions. But a robot that can <span style={{ fontWeight: 600, color: NAVY }}>actually shop, create invoices, book flights, print documents, and handle money</span> — that's an AI employee. That's what clients pay Rp 2M/month for. The more automations you build, the stickier the product becomes.
             </div>
+          </div>
+        </div>
+      </Sec>
+
+      {/* ─── SKILL ARCHITECTURE ─── */}
+      <Sec id="arch-skills" title="Skill Architecture" badge="why 98%" defaultOpen={true} open={open} setOpen={setOpen}>
+        <div style={{ padding: "8px 16px 14px" }}>
+          <P>The automations above show <span style={{ fontWeight: 600, color: NAVY }}>what</span> OIC can do. This section shows <span style={{ fontWeight: 600, color: NAVY }}>how</span> — the exact instruction files that make it reliable.</P>
+
+          {/* Core concept */}
+          <div style={{
+            background: CREAM, borderRadius: 14, padding: "16px",
+            border: `1.5px dashed ${ACCENT}40`, margin: "14px 0",
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, marginBottom: 10, textTransform: "uppercase", letterSpacing: 1, textAlign: "center" }}>
+              What is a Skill?
+            </div>
+            <P>A skill is a <span style={{ fontWeight: 600, color: NAVY }}>.md file</span> on your server that tells the AI <span style={{ fontWeight: 600, color: NAVY }}>exactly</span> what to do, step by step. Like a recipe card.</P>
+            <P>Without a skill, the AI guesses. With a skill, it follows a script.</P>
+          </div>
+
+          {/* Visual: skill pipeline */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", margin: "16px 0 8px" }}>
+            <Box icon="📝" label="skill-book-flight.md" sub="Pre-written instruction set. Lives on your server." color={ACCENT} />
+            <Connector label="loaded into" />
+            <Box icon="🧠" label="AI Brain (GLM 4.5)" sub="Reads the skill file. Follows instructions literally." color={GREEN} />
+            <Connector label="executes via" />
+            <Box icon="🌐" label="OpenClaw + Playwright" sub="Headless browser. AI controls it step by step." color={YELLOW} />
+            <Connector label="verified by" />
+            <Box icon="👁️" label="Vision Model (Kimi K2.5)" sub="Screenshots after each step. AI checks: did it work?" color="#AF52DE" />
+          </div>
+
+          {/* Without vs With */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, margin: "14px 0" }}>
+            <div style={{
+              background: `${RED}08`, border: `1.5px solid ${RED}25`, borderRadius: 12,
+              padding: "12px 10px", textAlign: "center",
+            }}>
+              <div style={{ fontSize: 18, marginBottom: 4 }}>🎲</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: RED }}>Without Skills</div>
+              <div style={{ fontSize: 11, color: SUBTLE, marginTop: 4, lineHeight: 1.5 }}>
+                AI improvises each step. Different every time. Breaks when website changes. ~40% success.
+              </div>
+            </div>
+            <div style={{
+              background: `${GREEN}08`, border: `1.5px solid ${GREEN}25`, borderRadius: 12,
+              padding: "12px 10px", textAlign: "center",
+            }}>
+              <div style={{ fontSize: 18, marginBottom: 4 }}>📋</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: GREEN }}>With Skills</div>
+              <div style={{ fontSize: 11, color: SUBTLE, marginTop: 4, lineHeight: 1.5 }}>
+                AI follows exact script. Same steps every time. Fallbacks for edge cases. 98% success.
+              </div>
+            </div>
+          </div>
+
+          {/* File tree */}
+          <div style={{ fontSize: 12, fontWeight: 600, color: NAVY, marginBottom: 8, marginTop: 16 }}>
+            Skills live alongside the system prompt:
+          </div>
+          <div style={{
+            background: CREAM, borderRadius: 12, padding: "14px 16px",
+            fontFamily: "'DM Mono',monospace", fontSize: 11, lineHeight: 1.8, color: NAVY,
+          }}>
+            /server/prompts/<br />
+            ├── system-prompt-trader.md<br />
+            ├── system-prompt-beauty.md<br />
+            ├── system-prompt-toko.md<br />
+            ├── skills/<br />
+            │&nbsp;&nbsp; ├── browse.md<br />
+            │&nbsp;&nbsp; ├── vision.md<br />
+            │&nbsp;&nbsp; ├── shop-tokopedia.md<br />
+            │&nbsp;&nbsp; ├── book-flight.md<br />
+            │&nbsp;&nbsp; ├── create-invoice.md<br />
+            │&nbsp;&nbsp; └── print.md<br />
+          </div>
+        </div>
+      </Sec>
+
+      {/* ─── PERSONA SKILL MAP ─── */}
+      <Sec id="arch-personas" title="Persona Skill Map" badge="who needs what" open={open} setOpen={setOpen}>
+        <div style={{ padding: "8px 16px 14px" }}>
+          <P>Each persona gets a tailored set of skills. The system prompt defines <span style={{ fontWeight: 600, color: NAVY }}>personality</span>. Skills define what it can <span style={{ fontWeight: 600, color: NAVY }}>do</span>.</P>
+
+          {[
+            {
+              name: "OIC Trader", icon: "📈", color: GREEN,
+              desc: "For forex/crypto traders. Analyzes charts, looks up market data, journals trades.",
+              skills: [
+                { skill: "/analyze-chart", tools: ["/vision", "/camera"] },
+                { skill: "/market-data", tools: ["/browse"] },
+                { skill: "/trade-journal", tools: ["/pdf-gen"] },
+                { skill: "/alert-price", tools: ["/browse", "/whatsapp"] },
+              ],
+            },
+            {
+              name: "OIC Beauty", icon: "💄", color: "#AF52DE",
+              desc: "For beauty salons. Recommends products, books appointments, analyzes skin.",
+              skills: [
+                { skill: "/recommend", tools: ["/browse", "/vision"] },
+                { skill: "/book-appt", tools: ["/browse", "/whatsapp"] },
+                { skill: "/skin-analysis", tools: ["/vision", "/camera"] },
+                { skill: "/shop-beauty", tools: ["/browse", "/wallet"] },
+              ],
+            },
+            {
+              name: "OIC Toko", icon: "🏪", color: "#FF6B00",
+              desc: "For online sellers. Manages Tokopedia/Shopee orders, tracks inventory, replies to customers.",
+              skills: [
+                { skill: "/manage-orders", tools: ["/browse", "/vision"] },
+                { skill: "/check-inventory", tools: ["/browse"] },
+                { skill: "/reply-customer", tools: ["/whatsapp"] },
+                { skill: "/shop", tools: ["/browse", "/wallet"] },
+                { skill: "/create-invoice", tools: ["/pdf-gen", "/print"] },
+              ],
+            },
+            {
+              name: "OIC Tender", icon: "📑", color: NAVY,
+              desc: "For construction/procurement. Finds tenders, prepares documents, tracks deadlines.",
+              skills: [
+                { skill: "/find-tender", tools: ["/browse", "/vision"] },
+                { skill: "/prepare-docs", tools: ["/pdf-gen"] },
+                { skill: "/track-deadline", tools: ["/whatsapp"] },
+                { skill: "/create-invoice", tools: ["/pdf-gen", "/print"] },
+              ],
+            },
+          ].map((persona) => (
+            <div key={persona.name} style={{
+              background: `${persona.color}06`, border: `1.5px solid ${persona.color}20`,
+              borderRadius: 14, padding: "14px 16px", marginBottom: 10,
+            }}>
+              {/* Header */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 12, background: `${persona.color}15`,
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
+                }}>{persona.icon}</div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: persona.color }}>{persona.name}</div>
+                  <div style={{ fontSize: 11, color: SUBTLE, lineHeight: 1.4 }}>{persona.desc}</div>
+                </div>
+              </div>
+
+              {/* Skills list */}
+              <div style={{ fontSize: 10, fontWeight: 600, color: SUBTLE, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                Required Skills:
+              </div>
+              {persona.skills.map((s) => (
+                <div key={s.skill} style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  padding: "6px 0", borderBottom: `0.5px solid ${WARM}`,
+                }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: NAVY, fontFamily: "'DM Mono',monospace" }}>{s.skill}</span>
+                  <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    {s.tools.map((t) => <SkillBadge key={t} label={t} color={persona.color} />)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+
+          {/* Shared foundation */}
+          <div style={{
+            background: `${ACCENT}08`, border: `1.5px solid ${ACCENT}25`,
+            borderRadius: 12, padding: "12px 14px", marginTop: 6,
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: ACCENT, marginBottom: 6 }}>
+              Shared foundation skills (every persona uses):
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+              <SkillBadge label="/browse" color={ACCENT} />
+              <SkillBadge label="/vision" color={ACCENT} />
+              <SkillBadge label="/whatsapp" color={ACCENT} />
+            </div>
+            <div style={{ fontSize: 11, color: SUBTLE, marginTop: 6, lineHeight: 1.5 }}>
+              These are the core tools. Persona-specific skills build on top of them.
+            </div>
+          </div>
+        </div>
+      </Sec>
+
+      {/* ─── SKILL DEEP-DIVES ─── */}
+      <Sec id="arch-dives" title="Skill Deep-Dives" badge="the scripts" open={open} setOpen={setOpen}>
+        <div style={{ padding: "8px 16px 14px" }}>
+          <P>These are the <span style={{ fontWeight: 600, color: NAVY }}>exact instruction sets</span> loaded into the AI brain. Each skill is a recipe — follow the steps, get consistent results.</P>
+
+          {SKILLS.map((skill) => (
+            <div key={skill.id} style={{
+              background: WHITE, border: `1.5px solid ${skill.color}20`,
+              borderRadius: 14, marginBottom: 12, overflow: "hidden",
+            }}>
+              {/* Card header */}
+              <div style={{
+                background: `${skill.color}08`, padding: "12px 16px",
+                borderBottom: `1px solid ${skill.color}15`,
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontSize: 20 }}>{skill.icon}</span>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: skill.color, fontFamily: "'DM Mono',monospace" }}>
+                      {skill.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: SUBTLE }}>{skill.label}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ padding: "12px 16px" }}>
+                {/* Trigger */}
+                <div style={{ background: CREAM, borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: SUBTLE, textTransform: "uppercase", letterSpacing: 0.5 }}>Trigger: </span>
+                  <span style={{ fontSize: 11, color: NAVY, fontStyle: "italic" }}>{skill.trigger}</span>
+                </div>
+
+                {/* Tools used */}
+                <div style={{ marginBottom: 12 }}>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: SUBTLE, textTransform: "uppercase", letterSpacing: 0.5 }}>Tools: </span>
+                  {skill.tools.map((t) => <SkillBadge key={t} label={t} color={skill.color} />)}
+                </div>
+
+                {/* Instruction steps */}
+                <div style={{ fontSize: 10, fontWeight: 700, color: skill.color, marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>
+                  Instruction Set
+                </div>
+                {skill.steps.map((step) => (
+                  <RecipeStep key={step.n} n={step.n} text={step.text} tool={step.tool} />
+                ))}
+
+                {/* Fallbacks */}
+                <div style={{ background: `${RED}06`, borderRadius: 10, padding: "10px 14px", marginTop: 12 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: RED, marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>
+                    Fallbacks
+                  </div>
+                  {skill.fallbacks.map((fb, i) => (
+                    <FallbackItem key={i} condition={fb.condition} action={fb.action} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Sec>
+
+      {/* ─── RELIABILITY PATTERNS ─── */}
+      <Sec id="arch-reliable" title="Reliability Patterns" badge="98% accuracy" open={open} setOpen={setOpen}>
+        <div style={{ padding: "8px 16px 14px" }}>
+          <P>Skills alone get you to ~80%. These five patterns push accuracy to <span style={{ fontWeight: 600, color: GREEN }}>98%</span>.</P>
+
+          {[
+            {
+              n: "1", icon: "📸", title: "Screenshot Verification", color: "#AF52DE",
+              desc: "After EVERY action (click, type, navigate), take a screenshot and send to the vision model. Ask: 'Did the expected change happen?' If not, retry or fallback.",
+              example: "Click 'Cari Penerbangan' → Screenshot → Vision: 'Flight results loaded, 15 results.' → Continue.",
+            },
+            {
+              n: "2", icon: "🔄", title: "Fallback Chains", color: YELLOW,
+              desc: "Every step has a Plan B. If Plan B fails, Plan C. If all fail, ask a human. The AI never gets stuck — it always has a next move.",
+              example: "Can't find button by text → Try visual position → Scroll down → Full screenshot + ask admin.",
+            },
+            {
+              n: "3", icon: "🎯", title: "Visual Element Detection", color: GREEN,
+              desc: "Never rely on CSS selectors or coordinates (these break when websites update). Use the vision model to find elements by what they LOOK like: 'Find the blue checkout button'.",
+              example: "Instead of click('#btn-checkout') → /vision 'find checkout button' → returns (x,y) → click.",
+            },
+            {
+              n: "4", icon: "🔐", title: "Login Persistence", color: ACCENT,
+              desc: "Playwright saves browser sessions (cookies, localStorage). Login once → stays logged in for weeks. No re-login each time a skill runs.",
+              example: "First run: login to Tokopedia → save context. Next 100 runs: opens already logged in.",
+            },
+            {
+              n: "5", icon: "🆘", title: "Human Escalation", color: RED,
+              desc: "If stuck after all fallbacks, the AI does NOT guess or force through. It screenshots the problem and sends it to admin via WhatsApp, then waits.",
+              example: "CAPTCHA → AI can't solve → Sends: 'Stuck di CAPTCHA. Tolong solve manual.' → Waits → Resumes.",
+            },
+          ].map((p) => (
+            <div key={p.n} style={{
+              background: `${p.color}06`, border: `1.5px solid ${p.color}20`,
+              borderRadius: 14, padding: "14px 16px", marginBottom: 10,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: "50%", background: p.color,
+                  color: WHITE, fontSize: 14, fontWeight: 700,
+                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                }}>{p.n}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: p.color }}>{p.title}</div>
+              </div>
+              <div style={{ fontSize: 12, color: SUBTLE, lineHeight: 1.7, marginBottom: 8 }}>{p.desc}</div>
+              <div style={{
+                background: CREAM, borderRadius: 8, padding: "8px 12px",
+                fontFamily: "'DM Mono',monospace", fontSize: 10, color: NAVY, lineHeight: 1.7,
+              }}>{p.example}</div>
+            </div>
+          ))}
+
+          {/* Accuracy progression */}
+          <div style={{
+            background: `${GREEN}10`, border: `2px solid ${GREEN}25`,
+            borderRadius: 14, padding: "16px", marginTop: 6,
+          }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: GREEN, marginBottom: 10 }}>
+              Accuracy builds in layers
+            </div>
+            {[
+              { level: "Raw AI (no skill)", pct: "~40%", bar: 40 },
+              { level: "+ Skill script", pct: "~75%", bar: 75 },
+              { level: "+ Screenshot verify", pct: "~85%", bar: 85 },
+              { level: "+ Fallback chains", pct: "~92%", bar: 92 },
+              { level: "+ Visual detection", pct: "~96%", bar: 96 },
+              { level: "+ Human escalation", pct: "98%+", bar: 98 },
+            ].map((l) => (
+              <div key={l.level} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                <div style={{ fontSize: 10, color: SUBTLE, minWidth: 38, textAlign: "right", flexShrink: 0, fontFamily: "'DM Mono',monospace" }}>{l.pct}</div>
+                <div style={{ flex: 1, height: 6, background: WARM, borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{
+                    width: `${l.bar}%`, height: "100%", borderRadius: 3,
+                    background: l.bar >= 96 ? GREEN : l.bar >= 85 ? YELLOW : l.bar >= 75 ? "#FF6B00" : RED,
+                  }} />
+                </div>
+                <div style={{ fontSize: 10, color: NAVY, minWidth: 105, flexShrink: 0 }}>{l.level}</div>
+              </div>
+            ))}
           </div>
         </div>
       </Sec>
