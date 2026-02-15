@@ -24,10 +24,10 @@ describe("getDefault", () => {
   });
 
   describe("todos", () => {
-    it("has 6 tracks", () => {
+    it("has 7 tracks", () => {
       const tracks = Object.keys(data.todos);
-      expect(tracks).toHaveLength(6);
-      expect(tracks).toEqual(["brand", "digital", "tech", "content", "hardware", "sales"]);
+      expect(tracks).toHaveLength(7);
+      expect(tracks).toEqual(["brand", "digital", "tech", "content", "hardware", "sales", "ideas"]);
     });
 
     it("has 42 tasks total", () => {

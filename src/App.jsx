@@ -25,7 +25,13 @@ export default function App() {
     (async () => {
       try {
         const r = await storage.get("oic-dash-v4");
-        if (r?.value) setD(JSON.parse(r.value));
+        if (r?.value) {
+          const stored = JSON.parse(r.value);
+          if (!stored.todos.ideas) {
+            stored.todos.ideas = { label: "Ideas & Backlog", icon: "💡", items: [] };
+          }
+          setD(stored);
+        }
       } catch (e) {}
       setLoaded(true);
     })();
@@ -83,6 +89,49 @@ export default function App() {
 
   const deleteNote = (id) => setD((p) => ({ ...p, notes: p.notes.filter((n) => n.id !== id) }));
 
+  const addTask = (track, text, priority = "yellow", note = "") => {
+    if (!text.trim()) return;
+    setD((p) => ({
+      ...p,
+      todos: {
+        ...p.todos,
+        [track]: {
+          ...p.todos[track],
+          items: [
+            ...p.todos[track].items,
+            { id: `i${Date.now()}`, text: text.trim(), done: false, p: priority, note: note.trim() },
+          ],
+        },
+      },
+    }));
+  };
+
+  const editTask = (track, id, updates) => {
+    setD((p) => ({
+      ...p,
+      todos: {
+        ...p.todos,
+        [track]: {
+          ...p.todos[track],
+          items: p.todos[track].items.map((t) => (t.id === id ? { ...t, ...updates } : t)),
+        },
+      },
+    }));
+  };
+
+  const deleteTask = (track, id) => {
+    setD((p) => ({
+      ...p,
+      todos: {
+        ...p.todos,
+        [track]: {
+          ...p.todos[track],
+          items: p.todos[track].items.filter((t) => t.id !== id),
+        },
+      },
+    }));
+  };
+
   const all = flattenTasks(d.todos);
   const { total, done, pct, critical } = calcStats(all);
   const filteredMem = filterMemory(d.memory, memCat, search);
@@ -125,7 +174,17 @@ export default function App() {
           />
         )}
 
-        {tab === "tasks" && <TasksTab d={d} open={open} setOpen={setOpen} toggle={toggle} />}
+        {tab === "tasks" && (
+          <TasksTab
+            d={d}
+            open={open}
+            setOpen={setOpen}
+            toggle={toggle}
+            addTask={addTask}
+            editTask={editTask}
+            deleteTask={deleteTask}
+          />
+        )}
 
         {tab === "arch" && <ArchTab open={open} setOpen={setOpen} />}
 

@@ -96,6 +96,10 @@ OIC. Open Intelligence Companion. Teman kerja yang nggak pernah tidur.`,
         { id:"s8", text:"Collect 50 pre-launch leads", done:false, p:"red", note:"Landing page + social + communities + DMs" },
       ]
     },
+    ideas: {
+      label: "Ideas & Backlog", icon: "💡",
+      items: []
+    },
   },
   memory: [
     { id:"m1", cat:"product", title:"Hardware Strategy", text:"Stack-chan ($79) premium. XiaoZhi ($10-25) standard. Stack-chan first for quality & branding. XiaoZhi for scale Batch 1." },

@@ -180,7 +180,7 @@ export default function HomeTab({
       <Sec id="tracks" title="📊 All Tracks" defaultOpen={false} open={open} setOpen={setOpen}>
         {Object.entries(d.todos).map(([k, v]) => {
           const dn = v.items.filter((t) => t.done).length;
-          const p = Math.round((dn / v.items.length) * 100);
+          const p = v.items.length ? Math.round((dn / v.items.length) * 100) : 0;
           return (
             <div
               key={k}
